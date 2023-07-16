@@ -9,6 +9,8 @@ import threading
 import random
 import numpy as np
 
+
+
 # Create a connection to the SQLite database
 conn = sqlite3.connect('fitness.db', check_same_thread=False)
 cursor = conn.cursor()
@@ -19,23 +21,20 @@ cursor.execute('''CREATE TABLE IF NOT EXISTS users
                   chat_id INTEGER,
                   username TEXT,
                   name TEXT)''')
-
-# Create a table to store activity logs
 cursor.execute('''CREATE TABLE IF NOT EXISTS activities
                   (id INTEGER PRIMARY KEY AUTOINCREMENT,
                   user_id INTEGER,
                   activity TEXT,
                   points INTEGER,
                   date TEXT)''')
-
-# Define conversation states
 ACTIVITY = 1
 
-# Initialize the Telegram bot
+
+
+
+
 updater = Updater('5949047508:AAGNWqWhs3cELin2ZhkVnm3pQNCkBM93mnY')
 dispatcher = updater.dispatcher
-
-# Create a lock object for thread-safe database access
 db_lock = threading.Lock()
 
 # List of motivational statements
@@ -50,7 +49,6 @@ MOTIVATIONAL_QUOTES = [
     "Your only limit is you! 💫"
 ]
 
-# Define the main menu
 MAIN_MENU = (
     "Welcome to the Fitness Competition Bot! 🏋️‍♂️🏆\n\n"
     "You can register using /register command and log your activities using /log command. "
@@ -63,7 +61,9 @@ MAIN_MENU = (
     "▶️ /reset - Reset participant information and start fresh"
 )
 
-# ... Rest of the code ...
+
+
+
 
 
 def start(update: Update, context):
@@ -111,6 +111,9 @@ def log_activity_end(update: Update, context):
                        (chat_id, activity, points))
         conn.commit()
 
+
+
+  
     # Retrieve the total points for the user from the database
     cursor.execute('SELECT SUM(points) FROM activities WHERE user_id=?', (chat_id,))
     total_points_user = cursor.fetchone()[0] or 0
@@ -125,10 +128,8 @@ def log_activity_end(update: Update, context):
 
 def calculate_points(activity: str) -> int:
     """Calculate points based on the activity."""
-    # Implement your logic to calculate points for different activities
-    # You can define a points system based on activity types or intensity
+   
 
-    # Example points calculation
     if 'running' in activity.lower():
         return 5
     elif 'cycling' in activity.lower():
@@ -139,7 +140,7 @@ def calculate_points(activity: str) -> int:
         return 1
 
 def display_graph(update: Update, context):
-    """Handler for the /graph command."""
+   
     user = update.message.from_user
     chat_id = user.id
 
@@ -152,10 +153,7 @@ def display_graph(update: Update, context):
         update.message.reply_text("No data available for graph.")
         return
 
-    # Extract total points from the retrieved data
     total_points = [row[1] or 0 for row in data]
-
-    # Generate the x-axis values
     x_axis = range(1, len(total_points) + 1)
 
     # Generate the bar chart
@@ -164,21 +162,16 @@ def display_graph(update: Update, context):
     plt.ylabel('Total Points')
     plt.title('Fitness Points Progress')
     plt.grid(True)
-
-    # Save the graph image
     graph_path = 'graph.png'
     plt.savefig(graph_path, dpi=300, bbox_inches='tight')
 
     # Send the graph image to the user
     update.message.reply_photo(photo=open(graph_path, 'rb'))
-
-    # Remove the graph image file
     remove_file(graph_path)
 
 def determine_winner() -> str:
     """Determine the monthly winner based on total points."""
     with db_lock:
-        # Retrieve the total points for each user from the database
         cursor.execute('SELECT users.chat_id, users.name, SUM(activities.points) as total_points '
                        'FROM users JOIN activities ON users.id = activities.user_id '
                        'GROUP BY users.chat_id, users.name')
@@ -194,19 +187,16 @@ def determine_winner() -> str:
 
 
 def announce_winner(update: Update, context):
-    """Handler for the /winner command."""
-    winner = determine_winner()
+  winner = determine_winner()
     update.message.reply_text(winner, parse_mode=ParseMode.MARKDOWN)
 
 
 def reset_data(update: Update, context):
     """Handler for the /reset command to delete participant information."""
     with db_lock:
-        # Delete activity data
+     
         cursor.execute('DELETE FROM activities')
         conn.commit()
-
-        # Delete user data
         cursor.execute('DELETE FROM users')
         conn.commit()
 
@@ -224,14 +214,17 @@ def remove_file(file_path: str):
         os.remove(file_path)
 
 
-# Register command handlers
+
 dispatcher.add_handler(CommandHandler('start', start))
 dispatcher.add_handler(CommandHandler('register', register))
 dispatcher.add_handler(CommandHandler('graph', display_graph))
 dispatcher.add_handler(CommandHandler('winner', announce_winner))
 dispatcher.add_handler(CommandHandler('reset', reset_data))
 
-# Register conversation handler for logging activity
+
+
+
+
 conv_handler = ConversationHandler(
     entry_points=[CommandHandler('log', log_activity_start)],
     states={
